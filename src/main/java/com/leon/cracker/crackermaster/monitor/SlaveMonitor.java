@@ -1,6 +1,6 @@
 package com.leon.cracker.crackermaster.monitor;
 
-import com.leon.cracker.crackermaster.services.slaves.SlaveManagerService;
+import com.leon.cracker.crackermaster.services.slaves.ISlaveManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +11,14 @@ import org.springframework.stereotype.Component;
 public class SlaveMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(SlaveMonitor.class);
-    private SlaveManagerService slaveManagerService;
+    private ISlaveManagerService slaveManagerService;
 
     @Autowired
-    public void setSlaveManagerService(SlaveManagerService slaveManagerService) {
+    public void setSlaveManagerService(ISlaveManagerService slaveManagerService) {
         this.slaveManagerService = slaveManagerService;
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 10000)
     public void checkSlaves() {
 
         slaveManagerService.getRegisteredSlaves()
@@ -26,9 +26,11 @@ public class SlaveMonitor {
 
                     if (slaveManagerService.isSlaveUp(slave.getURI()))
                         logger.info("Slave {} is UP!", slave.getName());
-                    else
+                    else {
                         logger.info("Slave {} is DOWN!", slave.getName());
-
+                        logger.info("Removing slave: {}", slave);
+                        slaveManagerService.removeSlave(slave);
+                    }
                 });
     }
 }

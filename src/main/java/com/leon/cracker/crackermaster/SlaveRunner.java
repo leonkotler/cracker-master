@@ -1,6 +1,6 @@
 package com.leon.cracker.crackermaster;
 
-import com.leon.cracker.crackermaster.services.slaves.SlaveManagerService;
+import com.leon.cracker.crackermaster.services.slaves.ISlaveManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +12,11 @@ public class SlaveRunner implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(SlaveRunner.class);
 
-    private SlaveManagerService slaveManagerService;
+    private ISlaveManagerService slaveManagerService;
 
 
     @Autowired
-    public void setSlaveManagerService(SlaveManagerService slaveManagerService) {
+    public void setSlaveManagerService(ISlaveManagerService slaveManagerService) {
         this.slaveManagerService = slaveManagerService;
     }
 
