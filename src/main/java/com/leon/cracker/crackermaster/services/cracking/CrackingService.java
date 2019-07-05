@@ -1,5 +1,7 @@
 package com.leon.cracker.crackermaster.services.cracking;
 
+import com.leon.cracker.crackermaster.models.FoundPasswordRequest;
+import com.leon.cracker.crackermaster.models.SlaveCrackingRequest;
 import com.leon.cracker.crackermaster.services.slaves.ISlaveManagerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -9,25 +11,38 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PrimitiveIterator;
-import java.util.stream.IntStream;
 
 @Component
 public class CrackingService implements ICrackingService {
 
     private ISlaveManagerService slaveManagerService;
+    private IFileWritingService fileWritingService;
+    private final int defaultStartOfRange = 500000000;
+    private final int defaultEndOfRange =   599999999;
 
     @Autowired
     public void setSlaveManagerService(ISlaveManagerService slaveManagerService) {
         this.slaveManagerService = slaveManagerService;
     }
 
-    @Override
-    public void crackHashes(String fileLocation, String requestId) {
-        slaveManagerService.sendForCracking(extractHashesFromFile(fileLocation), requestId);
+    @Autowired
+    public void setFileWritingService(IFileWritingService fileWritingService) {
+        this.fileWritingService = fileWritingService;
     }
 
-    private List<String> extractHashesFromFile(String fileLocation){
+    @Override
+    public void crackHashes(String fileLocation, String requestId) {
+        SlaveCrackingRequest slaveCrackingRequest =
+                new SlaveCrackingRequest(extractHashesFromFile(fileLocation), requestId, defaultStartOfRange, defaultEndOfRange);
+        slaveManagerService.sendForCracking(slaveCrackingRequest);
+    }
+
+    @Override
+    public void handleFoundPassword(FoundPasswordRequest foundPasswordRequest) {
+        fileWritingService.writeToFile(foundPasswordRequest);
+    }
+
+    private List<String> extractHashesFromFile(String fileLocation) {
         List<String> hashes = new ArrayList<>();
 
         try {

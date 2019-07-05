@@ -2,6 +2,7 @@ package com.leon.cracker.crackermaster.services.slaves;
 
 import com.leon.cracker.crackermaster.externalapi.ISlaveAPI;
 import com.leon.cracker.crackermaster.models.SlaveCrackingRequest;
+import com.leon.cracker.crackermaster.models.SlaveDoneRequest;
 import com.leon.cracker.crackermaster.models.SlaveInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +14,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -23,7 +22,7 @@ public class SlaveManagerService implements ISlaveManagerService {
 
     private static final Logger logger = LoggerFactory.getLogger(SlaveManagerService.class);
 
-    private Set<SlaveInfo> registeredSlaves = ConcurrentHashMap.newKeySet();
+    private Map<SlaveInfo, List<SlaveCrackingRequest>> registeredSlaves = new ConcurrentHashMap<>();
 
     private ISlaveAPI slaveAPI;
 
@@ -59,7 +58,7 @@ public class SlaveManagerService implements ISlaveManagerService {
 
     @Override
     public void registerSlave(SlaveInfo slaveInfo) {
-        registeredSlaves.add(slaveInfo);
+        registeredSlaves.put(slaveInfo, new ArrayList<>());
         logger.info("A new slave has been registered {}", slaveInfo);
     }
 
@@ -75,7 +74,7 @@ public class SlaveManagerService implements ISlaveManagerService {
     }
 
     @Override
-    public Set<SlaveInfo> getRegisteredSlaves() {
+    public Map<SlaveInfo, List<SlaveCrackingRequest>> getRegisteredSlaves() {
         return this.registeredSlaves;
     }
 
@@ -90,24 +89,44 @@ public class SlaveManagerService implements ISlaveManagerService {
     }
 
     @Override
-    public void sendForCracking(List<String> hashes, String requestId) {
+    public void sendForCracking(SlaveCrackingRequest slaveCrackingRequest) {
 
-        int startOfRange = 500000000;
-        int jump = calculateJump(getRegisteredSlaves().size());
+        int jump = calculateJump(slaveCrackingRequest.getStart(), slaveCrackingRequest.getEnd(), getRegisteredSlaves().size());
 
-        for (SlaveInfo slaveInfo : this.getRegisteredSlaves()) {
+        sendCrackingRequestToEachSlave(
+                slaveCrackingRequest.getHashes(),
+                slaveCrackingRequest.getRequestId(),
+                slaveCrackingRequest.getStart(),
+                jump);
+
+    }
+
+    @Override
+    public void handleSlaveDoneRequest(SlaveDoneRequest slaveDoneRequest) {
+        logger.info("Slave {} is done with {}", slaveDoneRequest.getSlaveInfo(), slaveDoneRequest.getSlaveCrackingRequest());
+        logger.info("Removing request from slave");
+        registeredSlaves.get(slaveDoneRequest.getSlaveInfo()).remove(slaveDoneRequest.getSlaveCrackingRequest());
+    }
+
+    private int calculateJump(int startOfRange, int endOfRange, int numOfSlaves) {
+        return (endOfRange - startOfRange) / numOfSlaves;
+    }
+
+    private void sendCrackingRequestToEachSlave(List<String> hashes, String requestId, int startOfRange, int jump) {
+
+        for (Map.Entry<SlaveInfo, List<SlaveCrackingRequest>> entry : registeredSlaves.entrySet()) {
+
             SlaveCrackingRequest cr = new SlaveCrackingRequest(hashes, requestId, startOfRange, startOfRange + jump);
-            slaveAPI.sendCrackingRequestToSlave(slaveInfo, cr);
+            slaveAPI.sendCrackingRequestToSlave(entry.getKey(), cr);
+            addRequestToSlave(entry.getKey(), cr);
             startOfRange += jump;
+
         }
-
     }
 
-    private int calculateJump(int numOfSlaves) {
-        // We divide the total number range and add 1 if number of slaves is even
-        return 99999999 / numOfSlaves + (numOfSlaves % 2 == 0 ? 1 : 0);
+    private void addRequestToSlave(SlaveInfo slaveInfo, SlaveCrackingRequest cr) {
+        this.getRegisteredSlaves().get(slaveInfo).add(cr);
     }
-
 
 
 }

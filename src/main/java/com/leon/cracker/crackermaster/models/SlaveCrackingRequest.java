@@ -1,6 +1,7 @@
 package com.leon.cracker.crackermaster.models;
 
 import java.util.List;
+import java.util.Objects;
 
 public class SlaveCrackingRequest {
 
@@ -8,6 +9,7 @@ public class SlaveCrackingRequest {
     private String requestId;
     private int start;
     private int end;
+
 
     public SlaveCrackingRequest() {
     }
@@ -59,5 +61,20 @@ public class SlaveCrackingRequest {
                 ", start=" + start +
                 ", end=" + end +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SlaveCrackingRequest that = (SlaveCrackingRequest) o;
+        return start == that.start &&
+                end == that.end &&
+                requestId.equals(that.requestId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requestId, start, end);
     }
 }

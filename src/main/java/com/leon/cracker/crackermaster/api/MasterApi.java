@@ -2,6 +2,7 @@ package com.leon.cracker.crackermaster.api;
 
 import com.leon.cracker.crackermaster.models.FoundPasswordRequest;
 import com.leon.cracker.crackermaster.models.MasterCrackingRequest;
+import com.leon.cracker.crackermaster.models.SlaveDoneRequest;
 import com.leon.cracker.crackermaster.models.SlaveInfo;
 import com.leon.cracker.crackermaster.services.cracking.ICrackingService;
 import com.leon.cracker.crackermaster.services.slaves.ISlaveManagerService;
@@ -34,7 +35,7 @@ public class MasterApi {
     }
 
     @PostMapping("/create-slaves/{numOfSlaves}")
-    public ResponseEntity<String> createSlaves(@PathVariable int numOfSlaves){
+    public ResponseEntity<String> createSlaves(@PathVariable int numOfSlaves) {
         logger.info("Received createSlaves request with {} slaves", numOfSlaves);
 
         slaveManagerService.launchSlaves(numOfSlaves);
@@ -42,7 +43,7 @@ public class MasterApi {
     }
 
     @PostMapping("/register-slave")
-    public ResponseEntity<SlaveInfo> registerSlave(@RequestBody @Valid SlaveInfo slaveInfo){
+    public ResponseEntity<SlaveInfo> registerSlave(@RequestBody @Valid SlaveInfo slaveInfo) {
         logger.info("Received registerSlave request from: {}", slaveInfo);
 
         slaveManagerService.registerSlave(slaveInfo);
@@ -50,17 +51,24 @@ public class MasterApi {
     }
 
     @PostMapping("/crack")
-    public ResponseEntity<String> crack(@RequestBody @Valid MasterCrackingRequest masterCrackingRequest){
+    public ResponseEntity<String> crack(@RequestBody @Valid MasterCrackingRequest masterCrackingRequest) {
         String requestId = UUID.randomUUID().toString();
 
         logger.info("Received cracking request {} and id {}", masterCrackingRequest, requestId);
         crackingService.crackHashes(masterCrackingRequest.getFileLocation(), requestId);
 
-        return ResponseEntity.ok("Your hashes are being calculated, please check response at: " + requestId);
+        return ResponseEntity.ok("Your hashes are being calculated, please check passwords file at: " + "passwords-" + requestId + ".txt");
     }
 
     @PostMapping("/found-password")
-    public void foundPassword(@RequestBody FoundPasswordRequest foundPasswordRequest){
-        logger.info("Password Found! {}", foundPasswordRequest);
+    public void foundPassword(@RequestBody FoundPasswordRequest foundPasswordRequest) {
+        logger.info("Password Found request received {}", foundPasswordRequest);
+        crackingService.handleFoundPassword(foundPasswordRequest);
+    }
+
+    @PostMapping("/done-processing-request")
+    public void slaveDoneProcessing(@RequestBody SlaveDoneRequest slaveDoneRequest){
+        logger.info("Received Slave Done Request {}", slaveDoneRequest);
+        slaveManagerService.handleSlaveDoneRequest(slaveDoneRequest);
     }
 }
