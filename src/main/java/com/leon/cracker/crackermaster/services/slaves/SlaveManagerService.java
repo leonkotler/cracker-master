@@ -1,6 +1,7 @@
 package com.leon.cracker.crackermaster.services.slaves;
 
 import com.leon.cracker.crackermaster.externalapi.ISlaveAPI;
+import com.leon.cracker.crackermaster.models.RegisterWithMasterRequest;
 import com.leon.cracker.crackermaster.models.SlaveCrackingRequest;
 import com.leon.cracker.crackermaster.models.SlaveDoneRequest;
 import com.leon.cracker.crackermaster.models.SlaveInfo;
@@ -57,9 +58,9 @@ public class SlaveManagerService implements ISlaveManagerService {
     }
 
     @Override
-    public void registerSlave(SlaveInfo slaveInfo) {
-        registeredSlaves.put(slaveInfo, new ArrayList<>());
-        logger.info("A new slave has been registered {}", slaveInfo);
+    public void registerSlave(RegisterWithMasterRequest registerRequest) {
+        registeredSlaves.put(registerRequest.getSlaveInfo(), registerRequest.getCurrentRequests());
+        logger.info("A new slave has been registered {}", registerRequest);
     }
 
     private String getLocalHost() {
@@ -91,6 +92,11 @@ public class SlaveManagerService implements ISlaveManagerService {
     @Override
     public void sendForCracking(SlaveCrackingRequest slaveCrackingRequest) {
 
+        if (registeredSlaves.size() == 0){
+            logger.error("There are no slaves registered, cannot proceed!");
+            return;
+        }
+
         int jump = calculateJump(slaveCrackingRequest.getStart(), slaveCrackingRequest.getEnd(), getRegisteredSlaves().size());
 
         sendCrackingRequestToEachSlave(
@@ -109,7 +115,8 @@ public class SlaveManagerService implements ISlaveManagerService {
     }
 
     private int calculateJump(int startOfRange, int endOfRange, int numOfSlaves) {
-        return (endOfRange - startOfRange) / numOfSlaves;
+        // we add +1 to compensate gap with an uneven jump number
+        return ((endOfRange - startOfRange) / numOfSlaves) +1;
     }
 
     private void sendCrackingRequestToEachSlave(List<String> hashes, String requestId, int startOfRange, int jump) {

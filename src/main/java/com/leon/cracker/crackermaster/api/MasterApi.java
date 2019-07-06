@@ -1,9 +1,6 @@
 package com.leon.cracker.crackermaster.api;
 
-import com.leon.cracker.crackermaster.models.FoundPasswordRequest;
-import com.leon.cracker.crackermaster.models.MasterCrackingRequest;
-import com.leon.cracker.crackermaster.models.SlaveDoneRequest;
-import com.leon.cracker.crackermaster.models.SlaveInfo;
+import com.leon.cracker.crackermaster.models.*;
 import com.leon.cracker.crackermaster.services.cracking.ICrackingService;
 import com.leon.cracker.crackermaster.services.slaves.ISlaveManagerService;
 import org.slf4j.Logger;
@@ -43,11 +40,11 @@ public class MasterApi {
     }
 
     @PostMapping("/register-slave")
-    public ResponseEntity<SlaveInfo> registerSlave(@RequestBody @Valid SlaveInfo slaveInfo) {
-        logger.info("Received registerSlave request from: {}", slaveInfo);
+    public ResponseEntity<RegisterWithMasterRequest> registerSlave(@RequestBody @Valid RegisterWithMasterRequest registerWithMasterRequest) {
+        logger.info("Received registerSlave request from: {}", registerWithMasterRequest);
 
-        slaveManagerService.registerSlave(slaveInfo);
-        return ResponseEntity.ok(slaveInfo);
+        slaveManagerService.registerSlave(registerWithMasterRequest);
+        return ResponseEntity.ok(registerWithMasterRequest);
     }
 
     @PostMapping("/crack")
